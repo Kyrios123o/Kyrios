@@ -1,83 +1,118 @@
 const axios = require("axios");
 const fs = require("fs-extra");
+const path = require("path");
 
 module.exports = {
-  config: {
-    name: "monitor",
-    aliases: ["run"],
-    version: "1.3",
-    author: "Saif",
-    role: 0,
-    shortDescription: { 
-      en: "Check bot's uptime & ping with a cool design!" 
-    },
-    longDescription: { 
-      en: "Get details about how long the bot has been active along with its response time, presented in a stylish format."
-    },
-    category: "owner",
-    guide: { 
-      en: "Use {p}monitor to check bot uptime and ping with a cool design!" 
-    },
-    onChat: true
-  },
+  config: {
+    name: "monitor",
+    aliases: ["run"],
+    version: "1.5",
+    author: "EREN // Re-coded",
+    role: 0,
+    shortDescription: { 
+      en: "Check bot's uptime & ping with style!" 
+    },
+    longDescription: { 
+      en: "Shows how long the bot has been running & its response time in a cute format!" 
+    },
+    category: "owner",
+    guide: { 
+      en: "Use {p}monitor to check bot stats in a stylish way!" 
+    },
+    onChat: true
+  },
 
-  onStart: async function ({ api, event }) {
-    return this.monitor(api, event);
-  },
+  onStart: async function ({ api, event }) {
+    return this.monitor(api, event);
+  },
 
-  onChat: async function ({ event, api }) {
-    const content = event.body?.toLowerCase().trim();
-    if (["monitor", "run"].includes(content)) {
-      return this.monitor(api, event);
-    }
-  },
+  onChat: async function ({ event, api }) {
+    const content = event.body?.toLowerCase().trim();
+    if (["monitor", "run"].includes(content)) {
+      return this.monitor(api, event);
+    }
+  },
 
-  monitor: async function (api, event) {
-    try {
-      const start = Date.now();
+  monitor: async function (api, event) {
+    try {
+      const start = Date.now();
+      const temp = await api.sendMessage("⌛ 𝖥𝖾𝗍𝖼𝗁𝗂𝗇𝗀 𝖻𝗈𝗍 𝗌𝗍𝖺𝗍𝗎𝗌...", event.threadID);
+      setTimeout(() => api.unsendMessage(temp.messageID), 1500);
 
-      // ⏳ Send temp message
-      const temp = await api.sendMessage("⏳ Fetching data...", event.threadID);
-      
-      // Auto unsend after 1.5s
-      setTimeout(() => {
-        api.unsendMessage(temp.messageID);
-      }, 1500);
+      const end = Date.now();
+      const ping = end - start;
 
-      const end = Date.now();
-      const ping = end - start;
+      const uptime = process.uptime();
+      const days = Math.floor(uptime / 86400);
+      const hours = Math.floor((uptime % 86400) / 3600);
+      const minutes = Math.floor((uptime % 3600) / 60);
+      const seconds = Math.floor(uptime % 60);
 
-      // ⌛ Format uptime
-      const uptime = process.uptime();
-      const days = Math.floor(uptime / 86400);
-      const hours = Math.floor((uptime % 86400) / 3600);
-      const minutes = Math.floor((uptime % 3600) / 60);
-      const seconds = Math.floor(uptime % 60);
+      let uptimeFormatted = `⏳ ${days}d ${hours}h ${minutes}m ${seconds}s`;
+      if (days === 0) uptimeFormatted = `⏳ ${hours}h ${minutes}m ${seconds}s`;
+      if (hours === 0) uptimeFormatted = `⏳ ${minutes}m ${seconds}s`;
+      if (minutes === 0) uptimeFormatted = `⏳ ${seconds}s`;
 
-      let uptimeFormatted = `⏳ ${days}d ${hours}h ${minutes}m ${seconds}s`;
-      if (days === 0) uptimeFormatted = `⏳ ${hours}h ${minutes}m ${seconds}s`;
-      if (hours === 0) uptimeFormatted = `⏳ ${minutes}m ${seconds}s`;
-      if (minutes === 0) uptimeFormatted = `⏳ ${seconds}s`;
+      const imageURL = "https://i.imgur.com/IP1KV5u.mp4";
+      const fallbackImage = path.join(__dirname, "fallback.jpg"); // Optional local backup
 
-      // 🧁 Final styled message
-      const finalMessage = `
-<🎀 Bot 𝗌𝗍𝖺𝗍𝗎𝗌༄ 
+      const getImageStream = async () => {
+        try {
+          const res = await axios.get(imageURL, {
+            responseType: "stream",
+            headers: { "User-Agent": "Mozilla/5.0" }
+          });
+          return res.data;
+        } catch (err) {
+          if (err.response?.status === 429) {
+            console.warn("429 detected, using fallback image.");
+          } else {
+            console.warn("Image fetch error:", err.message);
+          }
+          if (fs.existsSync(fallbackImage)) {
+            return fs.createReadStream(fallbackImage);
+          } else {
+            return null; // no image
+          }
+        }
+      };
 
-𝖴𝗉𝗍𝗂𝗆𝖾: ${uptimeFormatted}
+      const finalMessage = `
+╭───────────────────────╮
+𝑩𝒐𝒕 𝑺𝒕𝒂𝒕𝒖𝒔 𝑪𝒉𝒆𝒄𝒌
+──────╯
+╰─────────────────
 
-𝖯𝗂𝗇𝗀: ${ping}ms
+┏━━━━━━━━━━━━━━━┓
+┃ 💤 𝖴𝗉𝗍𝗂𝗆𝗾: ${uptimeFormatted}
+┃ ⚡ 𝖯𝗂𝗇𝗀: ${ping}ms
+┃ 👑 𝖮𝗐𝗇𝖾𝗋: Munna
+┗━━━━━━━━━━━━━━━┛
 
-𝖮𝗐𝗇𝖾𝗋: Better sweet 
+𝗕𝗼𝘁 𝗶𝘀 𝗮𝗹𝗶𝘃𝗲 𝗮𝗻𝗱 𝗿𝗲𝗮𝗱𝘆 𝘁𝗼 𝗿𝘂𝗹𝗲!
 `;
 
-      await api.sendMessage({
-        body: finalMessage,
-        attachment: await global.utils.getStreamFromURL("https://i.imgur.com/AP4AI6G.gif")
-      }, event.threadID, event.messageID);
+      const attachment = await getImageStream();
 
-    } catch (error) {
-      console.error("Error in monitor command:", error);
-      return api.sendMessage(`❌ Error: ${error.message}`, event.threadID, event.messageID);
-    }
-  }
+      const message = await api.sendMessage({
+        body: finalMessage,
+        attachment: attachment || undefined
+      }, event.threadID, event.messageID);
+
+      // React to the user's original message
+      if (message?.messageID) {
+        api.setMessageReaction("⏳", event.messageID, event.threadID, true);
+        api.setMessageReaction("✅", event.messageID, event.threadID, true);
+      }
+
+    } catch (error) {
+      console.error("Monitor error:", error);
+
+      // React with ⏳ and ❎ to user's message in case of error
+      api.setMessageReaction("⏳", event.messageID, event.threadID, true);
+      api.setMessageReaction("❎", event.messageID, event.threadID, true);
+
+      return api.sendMessage(`❌ 𝗘𝗿𝗿𝗼𝗿: ${error.response?.status === 429 ? '𝖳𝗈𝗈 𝗆𝖺𝗇𝗒 𝗋𝖾𝗊𝗎𝖾𝗌𝗍𝗌! 𝖳𝗋𝗒 𝖺𝗀𝖺𝗂𝗇 𝗌𝗁𝗈𝗋𝗧𝗅𝗒.' : error.message}`, event.threadID, event.messageID);
+    }
+  }
 };
