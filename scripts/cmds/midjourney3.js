@@ -4,7 +4,7 @@ const { getStreamFromURL, shortenURL } = global.utils;
 async function generateImage(prompt) {
   try {
     const taskResponse = await axios.get(
-      `https://www.noobz-api.rf.gd/g?prompt=${encodeURIComponent(prompt)}`
+      `https://95zhk3-5000.csb.app/g?prompt=${encodeURIComponent(prompt)}`
     );
 
     if (!taskResponse.data.taskId) {
@@ -13,7 +13,7 @@ async function generateImage(prompt) {
 
     const taskId = taskResponse.data.taskId;
     const statusResponse = await axios.get(
-      `https://www.noobz-api.rf.gd/t?i=${taskId}`
+      `https://95zhk3-5000.csb.app/t?i=${taskId}`
     );
     const result = statusResponse.data;
 
@@ -34,7 +34,7 @@ async function generateImage(prompt) {
 async function upscaleImage(imageUrl) {
   try {
     const response = await axios.post(
-      'https://www.noobz-api.rf.gd/api/upscaler',
+      'https://95zhk3-5000.csb.app/api/upscaler',
       { imageUrl },
       {
         headers: { 'Content-Type': 'application/json' },
